@@ -82,11 +82,11 @@ class WebhookController < ApplicationController
     # 振り返りが始まっているとき(question >= 1)
     next_question = user_session.current_question + 1
     if next_question <= 5
-      response_text = "#{ fixed_phrases[:questions][user_session.current_question] }"
+      response_text = "#{fixed_phrases[:questions][user_session.current_question]}"
       user_session.current_question = next_question
       user_session.save
     elsif next_question > 5
-      response_text = "#{ fixed_phrases[:finishing] }"
+      response_text = "#{fixed_phrases[:finishing]}"
       user_session.current_question = 0
       user_session.save
     end
