@@ -42,7 +42,7 @@ class WebhookController < ApplicationController
   def handle_text_message(event, session_key)
     fixed_phrases = {
       greeting: "今日もお疲れさまです。振り返りを始めます。",
-      questions = [
+      questions: [
         '今日絶対に達成したかったことはなんですか？',
         '今日どんな出来事があって、どう感じましたか？',
         'なぜそう感じたのだと思いますか？',
@@ -66,6 +66,5 @@ class WebhookController < ApplicationController
       text: text
     }
     client.reply_message(reply_token, message)
-    end
   end
 end
