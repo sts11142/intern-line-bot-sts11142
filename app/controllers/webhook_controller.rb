@@ -54,7 +54,7 @@ class WebhookController < ApplicationController
     case event.message['text']
     when '振り返り'
       # 振り返りを始める（セッションを開始する）
-      session[session_key] = { current_question: 1 }
+      session[session_key] = { current_question: 1 }  # ユーザーごとに質問状態は異なる
       text = "#{fixed_phrases[:greeting]} \n\n #{fixed_phrases[:questions][0]}"  # 挨拶＋最初の質問
       reply_text(event['replyToken'], text)
     end
