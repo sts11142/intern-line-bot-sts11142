@@ -20,15 +20,13 @@ class WebhookController < ApplicationController
 
     events = client.parse_events_from(body)
     events.each { |event|
+      session_key = event['source']['userId']
+
       case event
       when Line::Bot::Event::Message
         case event.type
         when Line::Bot::Event::MessageType::Text
-          message = {
-            type: 'text',
-            text: event.message['text']
-          }
-          client.reply_message(event['replyToken'], message)
+          handle_text_message(event, session_key)
         when Line::Bot::Event::MessageType::Image, Line::Bot::Event::MessageType::Video
           response = client.get_message_content(event.message['id'])
           tf = Tempfile.open("content")
@@ -37,5 +35,37 @@ class WebhookController < ApplicationController
       end
     }
     head :ok
+  end
+
+  private
+
+  def handle_text_message(event, session_key)
+    fixed_phrases = {
+      greeting: "今日もお疲れさまです。振り返りを始めます。",
+      questions = [
+        '今日絶対に達成したかったことはなんですか？',
+        '今日どんな出来事があって、どう感じましたか？',
+        'なぜそう感じたのだと思いますか？',
+        'それを学びとして一文で表すとしたら、どのように人に教えますか？',
+        '今日をもう一度やり直すとしたら、どうしますか？'
+      ]
+    }
+
+    case event.message['text']
+    when '振り返り'
+      # 振り返りを始める（セッションを開始する）
+      session[session_key] = { current_question: 1 }
+      text = "#{fixed_phrases[:greeting]} \n\n #{fixed_phrases[:questions][0]}"  # 挨拶＋最初の質問
+      reply_text(event['replyToken'], text)
+    end
+  end
+  
+  def reply_text(reply_token, text)
+    message = {
+      type: 'text',
+      text: text
+    }
+    client.reply_message(reply_token, message)
+    end
   end
 end
