@@ -27,6 +27,12 @@ class WebhookController < ApplicationController
         case event.type
         when Line::Bot::Event::MessageType::Text
           handle_text_message(event, session_key)
+
+          message = {
+            type: 'text',
+            text: @response_text
+          }
+          client.reply_message(event['replyToken'], message)          
         when Line::Bot::Event::MessageType::Image, Line::Bot::Event::MessageType::Video
           response = client.get_message_content(event.message['id'])
           tf = Tempfile.open("content")
@@ -55,16 +61,7 @@ class WebhookController < ApplicationController
     when '振り返り'
       # 振り返りを始める（セッションを開始する）
       session[session_key] = { current_question: 1 }  # ユーザーごとに質問状態は異なる
-      text = "#{fixed_phrases[:greeting]} \n\n #{fixed_phrases[:questions][0]}"  # 挨拶＋最初の質問
-      reply_text(event['replyToken'], text)
+      @response_text = "#{fixed_phrases[:greeting]} \n\n #{fixed_phrases[:questions][0]}"  # 挨拶＋最初の質問
     end
-  end
-  
-  def reply_text(reply_token, text)
-    message = {
-      type: 'text',
-      text: text
-    }
-    client.reply_message(reply_token, message)
   end
 end
