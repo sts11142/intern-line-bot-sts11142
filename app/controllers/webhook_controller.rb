@@ -3,6 +3,18 @@ require 'line/bot'
 class WebhookController < ApplicationController
   protect_from_forgery except: [:callback] # CSRF対策無効化
 
+  fixed_phrases = {
+    greeting: "今日もお疲れさまです。\n振り返りを始めます。",
+    questions: [
+      '今日絶対に達成したかったことはなんですか？',
+      '今日どんな出来事があって、どう感じましたか？',
+      'なぜそう感じたのだと思いますか？',
+      'それを学びとして一文で表すとしたら、どのように人に教えますか？',
+      '今日をもう一度やり直すとしたら、どうしますか？'
+    ],
+    finishing: "これで質問は終了です\n明日も頑張りましょうね！"
+  }
+
   def client
     @client ||= Line::Bot::Client.new { |config|
       config.channel_secret = ENV["LINE_CHANNEL_SECRET"]
@@ -20,17 +32,15 @@ class WebhookController < ApplicationController
 
     events = client.parse_events_from(body)
     events.each { |event|
-      session_key = event['source']['userId']
-
       case event
       when Line::Bot::Event::Message
         case event.type
         when Line::Bot::Event::MessageType::Text
-          handle_text_message(event, session_key)
+          response_text = handle_text_message(event)
 
           message = {
             type: 'text',
-            text: @response_text
+            text: response_text
           }
           client.reply_message(event['replyToken'], message)
         when Line::Bot::Event::MessageType::Image, Line::Bot::Event::MessageType::Video
@@ -45,43 +55,42 @@ class WebhookController < ApplicationController
 
   private
 
-  def handle_text_message(event, session_key)
-    fixed_phrases = {
-      greeting: "今日もお疲れさまです。\n振り返りを始めます。",
-      questions: [
-        '今日絶対に達成したかったことはなんですか？',
-        '今日どんな出来事があって、どう感じましたか？',
-        'なぜそう感じたのだと思いますか？',
-        'それを学びとして一文で表すとしたら、どのように人に教えますか？',
-        '今日をもう一度やり直すとしたら、どうしますか？'
-      ],
-      finishing: "これで質問は終了です\n明日も頑張りましょうね！"
-    }
+  def handle_text_message(event)
+    user_id = event['source']['userId']
+    user_session = UserSession.find_or_initialize_by(user_id: user_id)
+    user_session.current_question ||= 0  # 初期化
 
-    case event.message['text']
-    when '振り返り'
-      # 振り返りを始める（セッションを開始する）
-      session[session_key] = { current_question: 1 }  # ユーザーごとに質問状態は異なる
-      @response_text = "#{fixed_phrases[:greeting]} \n\n #{fixed_phrases[:questions][0]}"  # 挨拶＋最初の質問
-    else
-      if session[session_key]
-        user_session = session[session_key]
-      else
-        @response_text = '振り返りを開始するには「振り返り」と入力しましょう'
-        return
-      end
-      
-      # 質問を次に進める
-      next_question = user_session[:current_question] + 1
-      if next_question <= 5
-        user_session[:current_question] = next_question
-        session[session_key] = user_session  # 質問番号を更新
-        @response_text = "#{ fixed_phrases[:questions][user_session[:current_question] -  1] }"
-      else
-        # 全ての質問が終了
-        session[session_key] = nil
-        @response_text = "#{ fixed_phrases[:finishing] }"
+    # 振り返りの処理開始
+    input_text = event.message['text']
+    response_text = ""
+
+    # 振り返りが始まっていないとき(question == 0)
+    if user_session.current_question == 0
+      if input_text == '振り返り'
+        # 振り返りを始める
+        user_session.current_question = 1
+        user_session.save
+        response_text = "#{fixed_phrases[:greeting]} \n\n #{fixed_phrases[:questions][0]}"  # 挨拶＋最初の質問
+        return response_text
+      elsif input_text != '振り返り'
+        # 注意メッセージ送信（まだ振り返りが始まっていない場合のみ）
+        response_text = '振り返りを開始するには「振り返り」と入力しましょう'  
+        return response_text        
       end
     end
+
+    # 振り返りが始まっているとき(question >= 1)
+    next_question = user_session.current_question + 1
+    if next_question <= 5
+      response_text = "#{ fixed_phrases[:questions][user_session.current_question] }"
+      user_session.current_question = next_question
+      user_session.save
+    elsif next_question > 5
+      response_text = "#{ fixed_phrases[:finishing] }"
+      user_session.current_question = 0
+      user_session.save
+    end
+
+    return response_text
   end
 end
