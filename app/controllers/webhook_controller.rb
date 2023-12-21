@@ -102,7 +102,7 @@ class WebhookController < ApplicationController
   end
 
   def set_and_save_question_to(user_session, number)
-    user_session.current_question = nunmber
+    user_session.current_question = number
     user_session.save
   end
 end
