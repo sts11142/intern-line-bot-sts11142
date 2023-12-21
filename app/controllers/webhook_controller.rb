@@ -44,6 +44,22 @@ class WebhookController < ApplicationController
   private
 
   def handle_text_message(event)
+    user_id = event['source']['userId']
+    user_session = UserSession.find_or_initialize_by(user_id: user_id)
+    user_session.current_question ||= 0  # 初期化
+
+    # 振り返りの処理開始
+    input_text = event.message['text']
+    response_text = ""
+
+    response_text = process_message_of(user_session, input_text)
+
+    return response_text
+  end
+
+  def process_message_of(user_session, input_text)
+    # TODO: 定数の位置
+    # TODO: 中間処理の簡潔化
     fixed_phrases = {
       greeting: "今日も良い一日でしたね！\nさっそく振り返りを始めましょう！！",
       interrupting: "一度中断しますね。\n再開する時は、「振り返り」と入力してください！",
@@ -57,14 +73,6 @@ class WebhookController < ApplicationController
         '今日をもう一度やり直すとしたら、何をしたいですか？'
       ]
     }
-  
-    user_id = event['source']['userId']
-    user_session = UserSession.find_or_initialize_by(user_id: user_id)
-    user_session.current_question ||= 0  # 初期化
-
-    # 振り返りの処理開始
-    input_text = event.message['text']
-    response_text = ""
 
     # 例外処理（中断）
     if input_text == '中断'
@@ -81,7 +89,7 @@ class WebhookController < ApplicationController
         response_text = "#{fixed_phrases[:greeting]} \n\n"  # 挨拶
       elsif input_text != '振り返り'
         # 注意メッセージ送信（まだ振り返りが始まっていない場合のみ）
-        response_text = fixed_phrases[:warning]
+        response_text = "#{fixed_phrases[:warning]}"
         return response_text        
       end
     end
@@ -90,15 +98,14 @@ class WebhookController < ApplicationController
     next_question = user_session.current_question + 1
     if next_question <= fixed_phrases[:questions].length
       # 質問を継続する
-      response_text << fixed_phrases[:questions][user_session.current_question]
+      response_text << "#{fixed_phrases[:questions][user_session.current_question]}"  # 挨拶文に質問文を追加する形
       set_and_save_question_to(user_session, next_question)
     elsif next_question > fixed_phrases[:questions].length
       # 終了を伝える
-      response_text = fixed_phrases[:finishing]
+      response_text = "#{fixed_phrases[:finishing]}"
       set_and_save_question_to(user_session, 0)
     end
 
-    return response_text
   end
 
   def set_and_save_question_to(user_session, number)
