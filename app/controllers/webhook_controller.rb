@@ -43,7 +43,7 @@ class WebhookController < ApplicationController
 
   def push
     # 全ユーザーにブロードキャストプッシュ通知を送信する
-    PushLineReminderService.new(ENV["LINE_CHANNEL_TOKEN"]).call
+    PushLineReminderService.new.call
   end
 
   private

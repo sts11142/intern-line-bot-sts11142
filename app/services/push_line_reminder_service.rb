@@ -6,10 +6,6 @@ LINE_BROADCAST_ENDPOINT = "https://api.line.me/v2/bot/message/broadcast"
 REMINDER_MESSAGE = "【リマインド】\nお疲れさまです。今日の振り返りを始めましょう！\n５分で終わりますよ"
 
 class PushLineReminderService
-    def initialize(line_channel_token)
-        @line_channel_token = line_channel_token
-    end
-
     def call
         # httpリクエストの設定
         uri = URI.parse(LINE_BROADCAST_ENDPOINT)
@@ -19,7 +15,7 @@ class PushLineReminderService
 
         # リクエストの内容を準備
         headers = {
-            'Authorization': "Bearer #{@line_channel_token}",
+            'Authorization': "Bearer #{ENV["LINE_CHANNEL_TOKEN"]}",
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
