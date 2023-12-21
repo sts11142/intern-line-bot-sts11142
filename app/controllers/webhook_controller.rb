@@ -53,6 +53,7 @@ class WebhookController < ApplicationController
         'これを学びとして一文で表すとしたら、どのように人に教えましょうか...',
         '今日をもう一度やり直すとしたら、どんなことをしたいですか？'
       ],
+      interrupting: "一度中断しますね。\n再開する時は、「振り返り」と入力してください！",
       finishing: "これで質問は終了です！とても良い学びでした\nですが無理は禁物です。\n\n明日も頑張りましょうね！"
     }
   
@@ -63,6 +64,12 @@ class WebhookController < ApplicationController
     # 振り返りの処理開始
     input_text = event.message['text']
     response_text = ""
+
+    if input_text == '中断'
+      response_text = fixed_phrases[:interrupting]
+      user_session.current_question = 0
+      user_session.save
+    end
 
     # 振り返りが始まっていないとき(question == 0)
     if user_session.current_question == 0
