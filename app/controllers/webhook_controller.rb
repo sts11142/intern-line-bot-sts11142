@@ -45,15 +45,15 @@ class WebhookController < ApplicationController
 
   def handle_text_message(event)
     fixed_phrases = {
-      greeting: "今日もお疲れさまです。\n振り返りを始めます。",
+      greeting: "今日も良い一日でしたね！\nさっそく振り返りを始めましょう！！",
       questions: [
-        '今日絶対に達成したかったことはなんですか？',
-        '今日どんな出来事があって、どう感じましたか？',
+        '今日、絶対に達成したかったことはなんでしたか？',
+        '今日はどんな出来事があって、どう感じましたか？教えてください！',
         'なぜそう感じたのだと思いますか？',
-        'それを学びとして一文で表すとしたら、どのように人に教えますか？',
-        '今日をもう一度やり直すとしたら、どうしますか？'
+        'これを学びとして一文で表すとしたら、どのように人に教えましょうか...',
+        '今日をもう一度やり直すとしたら、どんなことをしたいですか？'
       ],
-      finishing: "これで質問は終了です\n明日も頑張りましょうね！"
+      finishing: "これで質問は終了です！とても良い学びでした\nですが無理は禁物です。\n\n明日も頑張りましょうね！"
     }
   
     user_id = event['source']['userId']
@@ -67,7 +67,7 @@ class WebhookController < ApplicationController
     # 振り返りが始まっていないとき(question == 0)
     if user_session.current_question == 0
       if input_text == '振り返り'
-        # 振り返りの開始を伝える
+        # 開始の挨拶をする（後で質問を加える）
         response_text = "#{fixed_phrases[:greeting]} \n\n"  # 挨拶
       elsif input_text != '振り返り'
         # 注意メッセージ送信（まだ振り返りが始まっていない場合のみ）
