@@ -3,18 +3,6 @@ require 'line/bot'
 class WebhookController < ApplicationController
   protect_from_forgery except: [:callback] # CSRF対策無効化
 
-  fixed_phrases = {
-    greeting: "今日もお疲れさまです。\n振り返りを始めます。",
-    questions: [
-      '今日絶対に達成したかったことはなんですか？',
-      '今日どんな出来事があって、どう感じましたか？',
-      'なぜそう感じたのだと思いますか？',
-      'それを学びとして一文で表すとしたら、どのように人に教えますか？',
-      '今日をもう一度やり直すとしたら、どうしますか？'
-    ],
-    finishing: "これで質問は終了です\n明日も頑張りましょうね！"
-  }
-
   def client
     @client ||= Line::Bot::Client.new { |config|
       config.channel_secret = ENV["LINE_CHANNEL_SECRET"]
@@ -56,6 +44,18 @@ class WebhookController < ApplicationController
   private
 
   def handle_text_message(event)
+    fixed_phrases = {
+      greeting: "今日もお疲れさまです。\n振り返りを始めます。",
+      questions: [
+        '今日絶対に達成したかったことはなんですか？',
+        '今日どんな出来事があって、どう感じましたか？',
+        'なぜそう感じたのだと思いますか？',
+        'それを学びとして一文で表すとしたら、どのように人に教えますか？',
+        '今日をもう一度やり直すとしたら、どうしますか？'
+      ],
+      finishing: "これで質問は終了です\n明日も頑張りましょうね！"
+    }
+  
     user_id = event['source']['userId']
     user_session = UserSession.find_or_initialize_by(user_id: user_id)
     user_session.current_question ||= 0  # 初期化
@@ -67,11 +67,8 @@ class WebhookController < ApplicationController
     # 振り返りが始まっていないとき(question == 0)
     if user_session.current_question == 0
       if input_text == '振り返り'
-        # 振り返りを始める
-        user_session.current_question = 1
-        user_session.save
-        response_text = "#{fixed_phrases[:greeting]} \n\n #{fixed_phrases[:questions][0]}"  # 挨拶＋最初の質問
-        return response_text
+        # 振り返りの開始を伝える
+        response_text = "#{fixed_phrases[:greeting]} \n\n"  # 挨拶
       elsif input_text != '振り返り'
         # 注意メッセージ送信（まだ振り返りが始まっていない場合のみ）
         response_text = '振り返りを開始するには「振り返り」と入力しましょう'  
@@ -82,7 +79,7 @@ class WebhookController < ApplicationController
     # 振り返りが始まっているとき(question >= 1)
     next_question = user_session.current_question + 1
     if next_question <= 5
-      response_text = fixed_phrases[:questions][user_session.current_question]
+      response_text << fixed_phrases[:questions][user_session.current_question]
       user_session.current_question = next_question
       user_session.save
     elsif next_question > 5
