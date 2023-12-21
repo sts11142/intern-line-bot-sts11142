@@ -43,7 +43,20 @@ class WebhookController < ApplicationController
 
   private
 
-  INITIAL_QUESTION_ID = 0
+  INITIAL_QUESTION_ID = 0.freeze
+  FIXED_PHRASES = {
+      greeting: "今日も良い一日でしたね！\nさっそく振り返りを始めましょう！！",
+      interrupting: "一度中断しますね。\n再開する時は、「振り返り」と入力してください！",
+      finishing: "これで質問は終了です、とても良い学びでしたね！\n\n明日も良い一日にしましょう！",
+      warning: "メッセージありがとうございます！\n振り返りを開始するには「振り返り」と入力しましょう",
+      questions: [
+        '今日、絶対に達成したかったことはなんでしたか？',
+        "今日はどんな出来事があって、どう感じましたか？\nぜひ教えてください！",
+        'なぜそう感じたのだと思いますか？？',
+        'この学びを一文で表しましょう！',
+        '今日をもう一度やり直すとしたら、何をしたいですか？'
+      ]
+    }.freeze
 
   def handle_text_message(event)
     user_id = event['source']['userId']
@@ -60,21 +73,7 @@ class WebhookController < ApplicationController
   def process_message_of(user_session, input_text)
     # TODO: 定数の位置
     # TODO: 中間処理の簡潔化
-    FIXED_PHRASES = {
-      greeting: "今日も良い一日でしたね！\nさっそく振り返りを始めましょう！！",
-      interrupting: "一度中断しますね。\n再開する時は、「振り返り」と入力してください！",
-      finishing: "これで質問は終了です、とても良い学びでしたね！\n\n明日も良い一日にしましょう！",
-      warning: "メッセージありがとうございます！\n振り返りを開始するには「振り返り」と入力しましょう",
-      questions: [
-        '今日、絶対に達成したかったことはなんでしたか？',
-        "今日はどんな出来事があって、どう感じましたか？\nぜひ教えてください！",
-        'なぜそう感じたのだと思いますか？？',
-        'この学びを一文で表しましょう！',
-        '今日をもう一度やり直すとしたら、何をしたいですか？'
-      ]
-    }
-
-    response_text = ""
+        response_text = ""
 
     # 例外処理（中断）
     if input_text == '中断'
