@@ -59,18 +59,18 @@ class WebhookController < ApplicationController
     }.freeze
 
   def handle_text_message(event)
-    user_id = event['source']['userId']
-    user_session = UserSession.find_or_initialize_by(user_id: user_id)
-    user_session.current_question ||= INITIAL_QUESTION_ID  # 初期化
+    line_user_id = event['source']['userId']
+    line_user = LineUser.find_or_initialize_by(line_user_id: line_user_id)
+    line_user.current_question_id ||= INITIAL_QUESTION_ID  # 初期化
 
     # 振り返りの処理開始
     input_text = event.message['text']
-    response_text = process_message_of(user_session, input_text)
+    response_text = process_message_of(line_user, input_text)
 
     return response_text
   end
 
-  def process_message_of(user_session, input_text)
+  def process_message_of(line_user, input_text)
     # TODO: 定数の位置
     # TODO: 中間処理の簡潔化
         response_text = ""
@@ -78,13 +78,13 @@ class WebhookController < ApplicationController
     # 例外処理（中断）
     if input_text == '中断'
       response_text = FIXED_PHRASES[:interrupting]
-      set_and_save_question(user_session, INITIAL_QUESTION_ID)
+      set_and_save_question(line_user, INITIAL_QUESTION_ID)
       return response_text
     end
 
     # 振り返りを行う
     # 振り返りが始まっていないとき(question == 0)
-    if user_session.current_question == INITIAL_QUESTION_ID
+    if line_user.current_question_id == INITIAL_QUESTION_ID
       if input_text == '振り返り'
         # 開始の挨拶をする（後で質問を加える）
         response_text = "#{FIXED_PHRASES[:greeting]} \n\n"  # 挨拶
@@ -96,23 +96,23 @@ class WebhookController < ApplicationController
     end
 
     # 振り返りが始まっているとき(question >= 1)
-    next_question = user_session.current_question + 1
+    next_question = line_user.current_question_id + 1
 
     if next_question <= FIXED_PHRASES[:questions].length
       # 質問を継続する
-      response_text += "#{FIXED_PHRASES[:questions][user_session.current_question]}"  # 挨拶文に質問文を追加する形
-      set_and_save_question(user_session, next_question)
+      response_text += "#{FIXED_PHRASES[:questions][line_user.current_question_id]}"  # 挨拶文に質問文を追加する形
+      set_and_save_question(line_user, next_question)
     elsif next_question > FIXED_PHRASES[:questions].length
       # 終了を伝える
       response_text = "#{FIXED_PHRASES[:finishing]}"
-      set_and_save_question(user_session, INITIAL_QUESTION_ID)
+      set_and_save_question(line_user, INITIAL_QUESTION_ID)
     end
     
     return response_text
   end
 
-  def set_and_save_question(user_session, number)
-    user_session.current_question = number
-    user_session.save
+  def set_and_save_question(line_user, number)
+    line_user.current_question_id = number
+    line_user.save
   end
 end
