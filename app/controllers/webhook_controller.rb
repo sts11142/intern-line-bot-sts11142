@@ -65,12 +65,14 @@ class WebhookController < ApplicationController
     input_text = event.message['text']
     response_text = ""
 
+    # 例外処理（中断）
     if input_text == '中断'
       response_text = fixed_phrases[:interrupting]
-      user_session.current_question = 0
-      user_session.save
+      set_and_save_question_to(user_session, 0)
+      return response_text
     end
 
+    # 振り返りを行う
     # 振り返りが始まっていないとき(question == 0)
     if user_session.current_question == 0
       if input_text == '振り返り'
@@ -85,16 +87,21 @@ class WebhookController < ApplicationController
 
     # 振り返りが始まっているとき(question >= 1)
     next_question = user_session.current_question + 1
-    if next_question <= 5
+    if next_question <= fixed_phrases[:questions].length
+      # 質問を継続する
       response_text << fixed_phrases[:questions][user_session.current_question]
-      user_session.current_question = next_question
-      user_session.save
-    elsif next_question > 5
+      set_and_save_question_to(user_session, next_question)
+    elsif next_question > fixed_phrases[:questions].length
+      # 終了を伝える
       response_text = fixed_phrases[:finishing]
-      user_session.current_question = 0
-      user_session.save
+      set_and_save_question_to(user_session, 0)
     end
 
     return response_text
+  end
+
+  def set_and_save_question_to(user_session, number)
+    user_session.current_question = nunmber
+    user_session.save
   end
 end
