@@ -10,10 +10,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_02_13_112934) do
+ActiveRecord::Schema.define(version: 2023_12_21_055137) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "line_users", force: :cascade do |t|
+    t.string "line_user_id"
+    t.integer "current_question_id", default: 0
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+  end
 
   create_table "widgets", force: :cascade do |t|
     t.string "name"
