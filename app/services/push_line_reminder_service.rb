@@ -3,7 +3,7 @@ require 'uri'
 require 'json'
 
 LINE_BROADCAST_ENDPOINT = "https://api.line.me/v2/bot/message/broadcast"
-REMINDER_MESSAGE = "【リマインド】\nお疲れさまです。今日の振り返りを始めましょう！\n５分で終わりますよ"
+REMINDER_MESSAGE = "【リマインド】お疲れさま！\n今日の振り返りをしよう！５分で終わりますよ\n\n振り返りを始める時は「振り返り」と言ってね"
 
 class PushLineReminderService
     def call
