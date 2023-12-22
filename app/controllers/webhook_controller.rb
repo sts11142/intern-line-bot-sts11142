@@ -41,6 +41,11 @@ class WebhookController < ApplicationController
     head :ok
   end
 
+  def push
+    # 全ユーザーにブロードキャストプッシュ通知を送信する
+    PushLineReminderService.new.call
+  end
+
   private
 
   INITIAL_QUESTION_ID = 0.freeze
